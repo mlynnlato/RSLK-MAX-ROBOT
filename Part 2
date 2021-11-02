@@ -1,0 +1,105 @@
+#include "SimpleRSLK.h"
+const int trigPin = 32;
+const int echoPin = 33;
+int k=0;
+int readings[5];
+int temp;
+bool activegoing=true;
+long pulseLength, centimeters;
+uint16_t sensorVal[LS_NUM_SENSORS];
+uint16_t sensorCalVal[LS_NUM_SENSORS];
+uint16_t sensorMaxVal[LS_NUM_SENSORS];
+uint16_t sensorMinVal[LS_NUM_SENSORS];
+void setup() {
+Serial.begin(115200);
+ setupRSLK();
+ setupWaitBtn(LP_LEFT_BTN);
+ setupLed(RED_LED);
+ clearMinMax(sensorMinVal,sensorMaxVal);
+pinMode(trigPin,OUTPUT);
+pinMode(echoPin,INPUT);
+delay(1000);
+}
+void floorCalibration() {
+ delay(2000);
+ String btnMsg = "Push left button on Launchpad to begin calibration.\n";
+ btnMsg += "Make sure the robot is on the floor away from the line.\n";
+ waitBtnPressed(LP_LEFT_BTN,btnMsg,RED_LED);
+ delay(1000);
+ Serial.println("Running calibration on floor");
+ simpleCalibrate();
+ Serial.println("Reading floor values complete");
+ btnMsg = "Push left button on Launchpad to begin line following.\n";
+ btnMsg += "Make sure the robot is on the line.\n";
+ waitBtnPressed(LP_LEFT_BTN,btnMsg,RED_LED);
+ delay(1000);
+ enableMotor(BOTH_MOTORS);
+}
+void simpleCalibrate() {
+ setMotorDirection(BOTH_MOTORS,MOTOR_DIR_FORWARD);
+ enableMotor(BOTH_MOTORS);
+ setMotorSpeed(BOTH_MOTORS,20);
+ for(int x = 0;x<100;x++){
+ readLineSensor(sensorVal);
+ setSensorMinMax(sensorVal,sensorMinVal,sensorMaxVal);
+ }
+ disableMotor(BOTH_MOTORS);
+}
+bool isCalibrationComplete = false;
+void sensorfunction(){digitalWrite(trigPin, LOW); //Used to return the value of the sensor in ever loop
+ delayMicroseconds(5);
+ digitalWrite(trigPin, HIGH);
+ delayMicroseconds(10);
+ pulseLength = pulseIn(echoPin, HIGH);
+ centimeters = pulseLength / 58;
+}
+void performcircle(){
+delay(2000);
+while(centimeters>0)//I added this as it helped with elimiated the error of the sensor reading the value 0 when first booting up{
+setMotorDirection(RIGHT_MOTOR,MOTOR_DIR_BACKWARD);
+setMotorSpeed(BOTH_MOTORS,15);
+delay(900); //This delay helps turn the robot 90 degrees with a delay of .9 seconds
+setMotorSpeed(BOTH_MOTORS,0);
+delay(1000); //Just a pause between moving to avoid any unwanted shifting
+setMotorDirection(RIGHT_MOTOR,MOTOR_DIR_FORWARD);
+setMotorSpeed(RIGHT_MOTOR,10);
+setMotorSpeed(LEFT_MOTOR,20);
+delay(7450); //The delay that allowed the robot to perform a perfect 50 CM circle
+disableMotor(BOTH_MOTORS);
+}
+}
+void loop() {
+ uint16_t normalSpeed = 10;
+ uint16_t fastSpeed = 25; //changed speed to get more percise movements
+ uint8_t lineColor = DARK_LINE;
+ if(isCalibrationComplete == false) {
+ floorCalibration();
+ isCalibrationComplete = true;
+ }
+ readLineSensor(sensorVal);
+ readCalLineSensor(sensorVal,
+ sensorCalVal,
+ sensorMinVal,
+ sensorMaxVal,
+ lineColor);
+ uint32_t linePos = getLinePosition(sensorCalVal,lineColor);
+
+ sensorfunction(); //calls to get distance recorded by ultrasonic sensor
+if (centimeters < 20 && centimeters>0){ //Since the sensor is not perfectly on the front of the robot, 20 worked out to provided
+ //the perfect distance of 15cm from the very front of the bumpers. Also used to zero to elimiated any errors in the sensor readings
+ setMotorSpeed(BOTH_MOTORS,0);
+ performcircle();
+ } else if(linePos > 0 && linePos < 3000) { //used to calculate the if all the light sensors are activate or not
+ setMotorSpeed(LEFT_MOTOR,normalSpeed);
+ setMotorSpeed(RIGHT_MOTOR,fastSpeed);
+ } else if(linePos > 3500) {
+ setMotorSpeed(LEFT_MOTOR,fastSpeed);
+ setMotorSpeed(RIGHT_MOTOR,normalSpeed);
+  } else if (linePos == 0) {
+ setMotorSpeed(LEFT_MOTOR,0);
+ setMotorSpeed(RIGHT_MOTOR,0);
+ } else {
+ setMotorSpeed(LEFT_MOTOR,normalSpeed);
+ setMotorSpeed(RIGHT_MOTOR,normalSpeed);
+ }
+} 
