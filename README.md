@@ -7,8 +7,11 @@ with understanding on how the light sensors follow a path and calibrate.
 
 Part 1:
 Fully assembled TI-RSLK MAX vehicle will follow a straight, then curved, then straight line. The downward facing IR sensors and wheel encoders are used for this part of the lab.  The vehicle should stop when it reaches a 10cm perpendicular line. 
-![image](https://user-images.githubusercontent.com/93615982/139944998-0d8631ca-2cf1-4fc2-8296-6351b868a9d1.png)
-
 
 Part 2:
 Using the same 3 papers,  a box is placed at the perpendicular line at the end of the part 1’s path. The robot will again, follow the line, then stop 15 cm before the box. Then turn right 90 degrees, and run the robot in an approximate circle with a diameter of 50 cm. The robot should stop at the same point it started to run in a circle.
+
+![image](https://user-images.githubusercontent.com/93615982/139945208-d2ab2bd7-e8d6-409a-8dd2-2628c28384c4.png)
+
+
+Video: https://youtu.be/ahhGl6ZHyeQ
